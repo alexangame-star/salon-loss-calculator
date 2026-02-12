@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Калькулятор втрат салону — Вікторія Близнюк</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Mulish:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cream:#FDF8F4;
+  --petal:#F5E6E8;
+  --blush:#EEC5CC;
+  --rose:#C97B8A;
+  --deep:#7D3347;
+  --gold:#C4975A;
+  --gold-light:#E8C98A;
+  --dark:#1E1218;
+  --muted:#8A7078;
+  --white:#FFFFFF;
+  --green:#6B9E72;
+  --red:#C97B8A;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Mulish',sans-serif;
+  background:var(--cream);
+  color:var(--dark);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── ДЕКОРАТИВНИЙ ФОН ── */
+.bg-orb{
+  position:fixed;pointer-events:none;border-radius:50%;z-index:0;
+}
+.bg-orb-1{top:-120px;right:-80px;width:420px;height:420px;background:radial-gradient(circle,rgba(238,197,204,.4),transparent 65%);}
+.bg-orb-2{bottom:-100px;left:-80px;width:360px;height:360px;background:radial-gradient(circle,rgba(196,151,90,.2),transparent 65%);}
+.bg-orb-3{top:40%;left:60%;width:300px;height:300px;background:radial-gradient(circle,rgba(245,230,232,.3),transparent 65%);}
+
+/* ── ОБГОРТКА ── */
+.wrap{max-width:720px;margin:0 auto;padding:52px 24px 100px;position:relative;z-index:1;}
+
+/* ── ШАПКА ── */
+.hero{text-align:center;margin-bottom:56px;}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,var(--deep),#A0445A);
+  color:var(--white);
+  font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+  padding:7px 20px;border-radius:30px;margin-bottom:24px;
+}
+.hero-badge::before{content:'✦';color:var(--gold-light);font-size:9px;}
+.hero h1{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(34px,7vw,58px);
+  line-height:1.1;color:var(--dark);margin-bottom:6px;
+}
+.hero h1 em{font-style:italic;color:var(--deep);}
+.hero-line{
+  width:100px;height:1.5px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  margin:20px auto;
+}
+.hero-sub{
+  font-size:15px;color:var(--muted);font-weight:400;
+  line-height:1.7;max-width:520px;margin:0 auto;
+}
+.hero-sub strong{color:var(--deep);font-weight:700;}
+
+/* ── СЕКЦІЯ ВВЕДЕННЯ ── */
+.section{
+  background:var(--white);
+  border-radius:24px;
+  padding:36px 36px 32px;
+  margin-bottom:20px;
+  border:1px solid rgba(238,197,204,.4);
+  box-shadow:0 4px 32px rgba(125,51,71,.06);
+  position:relative;overflow:hidden;
+}
+.section::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--blush),var(--gold),var(--rose));
+}
+.section-label{
+  display:flex;align-items:center;gap:10px;
+  font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+  color:var(--rose);margin-bottom:20px;
+}
+.section-label::after{content:'';flex:1;height:1px;background:rgba(238,197,204,.5);}
+.section-icon{
+  width:32px;height:32px;
+  background:linear-gradient(135deg,var(--petal),var(--blush));
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;
+}
+.section h2{
+  font-family:'Playfair Display',serif;
+  font-size:22px;font-weight:700;
+  color:var(--dark);margin-bottom:6px;
+}
+.section p{font-size:13.5px;color:var(--muted);line-height:1.6;margin-bottom:24px;}
+
+/* ── ПОЛЯ ВВЕДЕННЯ ── */
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.fields.single{grid-template-columns:1fr;}
+@media(max-width:560px){.fields{grid-template-columns:1fr;}}
+
+.field{}
+.field label{
+  display:block;font-size:11px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--rose);margin-bottom:8px;
+}
+.field-hint{font-size:11px;color:var(--muted);margin-bottom:6px;font-style:italic;}
+.input-wrap{position:relative;}
+.input-wrap .unit{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  font-size:12px;color:var(--muted);font-weight:600;pointer-events:none;
+}
+input[type=number]{
+  width:100%;padding:13px 44px 13px 16px;
+  background:var(--cream);
+  border:1.5px solid rgba(238,197,204,.7);
+  border-radius:12px;
+  font-family:'Mulish',sans-serif;font-size:16px;font-weight:600;
+  color:var(--dark);outline:none;
+  transition:all .2s;
+  -moz-appearance:textfield;
+}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+input[type=number]:focus{
+  border-color:var(--rose);
+  background:var(--white);
+  box-shadow:0 0 0 3px rgba(201,123,138,.12);
+}
+input[type=number].error{border-color:#e87a7a;box-shadow:0 0 0 3px rgba(232,122,122,.1);}
+
+/* ── СЛАЙДЕР ── */
+.slider-wrap{margin-top:4px;}
+input[type=range]{
+  width:100%;height:4px;
+  background:linear-gradient(90deg,var(--rose) var(--pct,50%),rgba(238,197,204,.5) var(--pct,50%));
+  border-radius:4px;outline:none;
+  -webkit-appearance:none;cursor:pointer;
+  margin-bottom:6px;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:22px;height:22px;
+  background:linear-gradient(135deg,var(--deep),var(--rose));
+  border-radius:50%;border:3px solid var(--white);
+  box-shadow:0 2px 8px rgba(125,51,71,.3);
+  cursor:pointer;
+}
+.slider-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);}
+
+/* ── КНОПКА РАХУВАТИ ── */
+.btn-calc{
+  width:100%;padding:18px;margin-top:12px;
+  background:linear-gradient(135deg,var(--deep),var(--rose));
+  color:var(--white);border:none;border-radius:16px;
+  font-family:'Mulish',sans-serif;font-size:15px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;
+  cursor:pointer;transition:all .3s ease;
+  box-shadow:0 8px 32px rgba(125,51,71,.3);
+  position:relative;overflow:hidden;
+}
+.btn-calc::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);
+  opacity:0;transition:opacity .3s;
+}
+.btn-calc:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(125,51,71,.4);}
+.btn-calc:hover::before{opacity:1;}
+.btn-calc:active{transform:translateY(0);}
+
+/* ── РЕЗУЛЬТАТИ ── */
+#results{display:none;}
+#results.show{display:block;animation:fadeUp .6s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+/* Головне число */
+.big-loss{
+  background:linear-gradient(135deg,var(--dark) 0%,#3D1522 100%);
+  border-radius:24px;padding:40px 36px;text-align:center;
+  margin-bottom:20px;position:relative;overflow:hidden;
+}
+.big-loss::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:240px;height:240px;
+  background:radial-gradient(circle,rgba(238,197,204,.15),transparent 65%);
+  border-radius:50%;
+}
+.big-loss::after{
+  content:'';position:absolute;bottom:-40px;left:-40px;
+  width:180px;height:180px;
+  background:radial-gradient(circle,rgba(196,151,90,.12),transparent 65%);
+  border-radius:50%;
+}
+.big-loss-label{
+  font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(255,255,255,.5);margin-bottom:12px;position:relative;z-index:1;
+}
+.big-loss-num{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(42px,10vw,72px);
+  font-weight:700;color:var(--white);
+  line-height:1;margin-bottom:4px;
+  position:relative;z-index:1;
+}
+.big-loss-num span{color:var(--gold-light);}
+.big-loss-sub{
+  font-size:14px;color:rgba(255,255,255,.55);
+  margin-bottom:20px;position:relative;z-index:1;
+}
+.big-loss-year{
+  display:inline-block;
+  background:rgba(196,151,90,.2);
+  border:1px solid rgba(196,151,90,.4);
+  color:var(--gold-light);
+  font-size:13px;font-weight:700;
+  padding:8px 24px;border-radius:30px;
+  position:relative;z-index:1;
+}
+
+/* Зони втрат */
+.zones{display:grid;gap:14px;margin-bottom:20px;}
+.zone{
+  background:var(--white);border-radius:16px;
+  padding:22px 24px;
+  border:1px solid rgba(238,197,204,.4);
+  box-shadow:0 2px 16px rgba(125,51,71,.05);
+  display:flex;gap:18px;align-items:flex-start;
+  transition:transform .2s;
+}
+.zone:hover{transform:translateX(4px);}
+.zone-icon{
+  width:44px;height:44px;min-width:44px;
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+}
+.zone-icon.red{background:linear-gradient(135deg,#FDE8EB,#FAD0D6);}
+.zone-icon.orange{background:linear-gradient(135deg,#FDF0E0,#FAE0C0);}
+.zone-icon.purple{background:linear-gradient(135deg,#EDE8FA,#D8D0F5);}
+.zone-icon.teal{background:linear-gradient(135deg,#E0F0F0,#C0E8E8);}
+.zone-body{flex:1;}
+.zone-title{font-size:13px;font-weight:700;color:var(--dark);margin-bottom:4px;}
+.zone-desc{font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:8px;}
+.zone-amount{
+  font-family:'Playfair Display',serif;
+  font-size:22px;font-weight:700;
+}
+.zone-amount.red{color:var(--rose);}
+.zone-amount.orange{color:var(--gold);}
+.zone-amount.purple{color:#7B68C8;}
+.zone-amount.teal{color:#5A9EA0;}
+.zone-amount small{font-size:12px;font-family:'Mulish',sans-serif;font-weight:600;color:var(--muted);}
+
+/* Потенціал */
+.potential{
+  background:linear-gradient(135deg,#EBF5EC,#F0FAF0);
+  border:1.5px solid rgba(107,158,114,.3);
+  border-radius:20px;padding:28px 28px;
+  margin-bottom:20px;text-align:center;
+}
+.potential-label{font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--green);margin-bottom:10px;}
+.potential-num{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(32px,7vw,48px);font-weight:700;
+  color:var(--green);margin-bottom:4px;
+}
+.potential-sub{font-size:13px;color:#4a7a50;line-height:1.5;}
+
+/* CTA */
+.cta{
+  background:linear-gradient(135deg,var(--deep),#A04060);
+  border-radius:24px;padding:40px 36px;
+  text-align:center;position:relative;overflow:hidden;
+}
+.cta::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;background:radial-gradient(circle,rgba(245,230,232,.15),transparent);border-radius:50%;}
+.cta-badge{display:inline-block;background:rgba(238,197,204,.2);color:var(--blush);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:5px 18px;border-radius:20px;margin-bottom:16px;position:relative;z-index:1;}
+.cta h3{font-family:'Playfair Display',serif;font-size:clamp(22px,5vw,32px);color:var(--white);line-height:1.2;margin-bottom:10px;position:relative;z-index:1;}
+.cta h3 em{font-style:italic;color:var(--blush);}
+.cta p{font-size:14px;color:rgba(255,255,255,.6);line-height:1.65;margin-bottom:28px;position:relative;z-index:1;}
+.cta-list{list-style:none;text-align:left;max-width:380px;margin:0 auto 28px;position:relative;z-index:1;}
+.cta-list li{font-size:13.5px;color:rgba(255,255,255,.85);padding:6px 0;display:flex;gap:10px;align-items:flex-start;}
+.cta-list li::before{content:'✦';color:var(--gold-light);font-size:9px;margin-top:4px;min-width:14px;}
+.cta-btn{
+  display:inline-block;
+  background:linear-gradient(135deg,var(--rose),#E090A0);
+  color:var(--white);text-decoration:none;
+  padding:17px 40px;border-radius:50px;
+  font-family:'Mulish',sans-serif;font-size:14px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;
+  transition:all .25s ease;
+  box-shadow:0 8px 32px rgba(201,123,138,.45);
+  position:relative;z-index:1;
+}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(201,123,138,.55);}
+.cta-note{font-size:11px;color:rgba(255,255,255,.35);margin-top:12px;position:relative;z-index:1;}
+
+/* Recalc */
+.btn-recalc{
+  width:100%;margin-top:16px;padding:13px;
+  background:transparent;border:1.5px solid rgba(238,197,204,.6);
+  color:var(--muted);border-radius:50px;
+  font-family:'Mulish',sans-serif;font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .2s;
+}
+.btn-recalc:hover{border-color:var(--rose);color:var(--rose);}
+
+/* Повідомлення про помилку */
+.calc-error{
+  background:#FDE8EB;border:1px solid rgba(201,123,138,.3);
+  border-radius:12px;padding:14px 18px;
+  font-size:13px;color:var(--deep);
+  margin-top:12px;display:none;
+  animation:fadeUp .3s ease both;
+}
+
+/* Tooltip */
+.tooltip{position:relative;display:inline-block;cursor:help;margin-left:4px;}
+.tooltip-icon{width:16px;height:16px;background:var(--blush);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:var(--rose);font-weight:700;vertical-align:middle;}
+.tooltip-text{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--dark);color:var(--white);font-size:11px;line-height:1.5;padding:8px 12px;border-radius:8px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10;max-width:200px;white-space:normal;text-align:center;}
+.tooltip:hover .tooltip-text{opacity:1;}
+
+@media(max-width:560px){
+  .wrap{padding:32px 16px 80px;}
+  .section{padding:24px 20px;}
+  .big-loss{padding:28px 20px;}
+  .zone{padding:16px 18px;}
+  .cta{padding:28px 20px;}
+  .fields{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+<div class="bg-orb bg-orb-3"></div>
+
+<div class="wrap">
+
+  <!-- ШАПКА -->
+  <div class="hero">
+    <div class="hero-badge">Вікторія Близнюк • Cherry Beauty Studio</div>
+    <h1>Скільки грошей<br><em>втрачає</em> твій салон?</h1>
+    <div class="hero-line"></div>
+    <p class="hero-sub">Введи 7 простих цифр — і калькулятор покаже <strong>реальні втрати</strong> твого бізнесу щомісяця</p>
+  </div>
+
+  <!-- СЕКЦІЯ 1: КОМАНДА -->
+  <div class="section">
+    <div class="section-label">
+      <div class="section-icon">👥</div>
+      Команда та простір
+    </div>
+    <div class="fields">
+      <div class="field">
+        <label>Майстрів зараз працює
+          <span class="tooltip"><span class="tooltip-icon">?</span><span class="tooltip-text">Скільки майстрів реально виходять на роботу зараз</span></span>
+        </label>
+        <div class="input-wrap">
+          <input type="number" id="masters-now" min="1" max="50" placeholder="4" value="">
+          <span class="unit">осіб</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Максимум місць у салоні
+          <span class="tooltip"><span class="tooltip-icon">?</span><span class="tooltip-text">Скільки майстрів могло б фізично працювати одночасно</span></span>
+        </label>
+        <div class="input-wrap">
+          <input type="number" id="masters-max" min="1" max="50" placeholder="8" value="">
+          <span class="unit">місць</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- СЕКЦІЯ 2: ГРАФІК -->
+  <div class="section">
+    <div class="section-label">
+      <div class="section-icon">🕐</div>
+      Графік роботи
+    </div>
+    <div class="fields">
+      <div class="field">
+        <label>Салон працює годин на день</label>
+        <div class="input-wrap">
+          <input type="number" id="hours-now" min="1" max="24" placeholder="10" value="">
+          <span class="unit">год</span>
+        </div>
+        <p class="field-hint">Максимально можливо — 12 годин</p>
+      </div>
+      <div class="field">
+        <label>Робочих днів на місяць</label>
+        <div class="input-wrap">
+          <input type="number" id="work-days" min="1" max="31" placeholder="26" value="">
+          <span class="unit">днів</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- СЕКЦІЯ 3: КЛІЄНТИ -->
+  <div class="section">
+    <div class="section-label">
+      <div class="section-icon">💅</div>
+      Завантаженість майстрів
+    </div>
+    <div class="fields">
+      <div class="field">
+        <label>Клієнтів приймає 1 майстер за день</label>
+        <div class="input-wrap">
+          <input type="number" id="clients-real" min="1" max="20" placeholder="4" value="">
+          <span class="unit">осіб</span>
+        </div>
+        <p class="field-hint">Зараз, в середньому</p>
+      </div>
+      <div class="field">
+        <label>Міг би прийняти максимально</label>
+        <div class="input-wrap">
+          <input type="number" id="clients-max" min="1" max="20" placeholder="7" value="">
+          <span class="unit">осіб</span>
+        </div>
+        <p class="field-hint">При повному завантаженні</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- СЕКЦІЯ 4: ФІНАНСИ -->
+  <div class="section">
+    <div class="section-label">
+      <div class="section-icon">💰</div>
+      Фінансові показники
+    </div>
+    <div class="fields">
+      <div class="field">
+        <label>Середній чек клієнта</label>
+        <div class="input-wrap">
+          <input type="number" id="avg-check" min="100" max="10000" placeholder="800" value="">
+          <span class="unit">грн</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Нових клієнтів за місяць</label>
+        <div class="input-wrap">
+          <input type="number" id="new-clients" min="0" max="1000" placeholder="30" value="">
+          <span class="unit">осіб</span>
+        </div>
+      </div>
+    </div>
+    <div class="fields single" style="margin-top:16px">
+      <div class="field">
+        <label>З них повертаються повторно — скільки?
+          <span class="tooltip"><span class="tooltip-icon">?</span><span class="tooltip-text">Приблизно, на відчуття. Якщо не знаєш — введи 50% від нових</span></span>
+        </label>
+        <div class="input-wrap">
+          <input type="number" id="return-clients" min="0" max="1000" placeholder="15" value="">
+          <span class="unit">осіб</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="calc-error" id="calc-error">⚠ Будь ласка, заповни всі поля коректно</div>
+
+  <button class="btn-calc" onclick="calculate()">
+    ✦ ПОРАХУВАТИ МОЇ ВТРАТИ
+  </button>
+
+  <!-- РЕЗУЛЬТАТИ -->
+  <div id="results">
+
+    <!-- Головне число -->
+    <div class="big-loss" style="margin-top:28px;">
+      <div class="big-loss-label">Твій салон втрачає щомісяця</div>
+      <div class="big-loss-num"><span id="res-month">0</span> грн</div>
+      <div class="big-loss-sub">прихованих втрат через незаповнений потенціал</div>
+      <div class="big-loss-year">За рік — <strong id="res-year">0</strong> грн</div>
+    </div>
+
+    <!-- Зони втрат -->
+    <div class="zones">
+
+      <div class="zone" id="zone-seats" style="display:none">
+        <div class="zone-icon red">🪑</div>
+        <div class="zone-body">
+          <div class="zone-title">Незайняті місця в салоні</div>
+          <div class="zone-desc" id="zone-seats-desc"></div>
+          <div class="zone-amount red"><span id="zone-seats-num">0</span> грн <small>/ міс</small></div>
+        </div>
+      </div>
+
+      <div class="zone" id="zone-load">
+        <div class="zone-icon orange">⏳</div>
+        <div class="zone-body">
+          <div class="zone-title">Порожні вікна у майстрів</div>
+          <div class="zone-desc" id="zone-load-desc"></div>
+          <div class="zone-amount orange"><span id="zone-load-num">0</span> грн <small>/ міс</small></div>
+        </div>
+      </div>
+
+      <div class="zone" id="zone-hours" style="display:none">
+        <div class="zone-icon purple">🌙</div>
+        <div class="zone-body">
+          <div class="zone-title">Невикористані години роботи</div>
+          <div class="zone-desc" id="zone-hours-desc"></div>
+          <div class="zone-amount purple"><span id="zone-hours-num">0</span> грн <small>/ міс</small></div>
+        </div>
+      </div>
+
+      <div class="zone" id="zone-churn" style="display:none">
+        <div class="zone-icon teal">🚪</div>
+        <div class="zone-body">
+          <div class="zone-title">Відтік клієнтів</div>
+          <div class="zone-desc" id="zone-churn-desc"></div>
+          <div class="zone-amount teal"><span id="zone-churn-num">0</span> грн <small>/ міс</small></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Потенціал -->
+    <div class="potential">
+      <div class="potential-label">✦ Твій реальний потенціал</div>
+      <div class="potential-num">+<span id="res-potential">0</span> грн</div>
+      <p class="potential-sub">стільки додатково може заробляти твій салон щомісяця<br>якщо закрити ці зони втрат</p>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta">
+      <div class="cta-badge">Безкоштовно • 60 хв онлайн</div>
+      <h3>Хочеш повернути<br><em>ці гроші своєму салону?</em></h3>
+      <p>На безкоштовному аудиті ми разом розберемо кожну зону втрат і складемо конкретний план дій.</p>
+      <ul class="cta-list">
+        <li>Персональний аналіз твоїх цифр</li>
+        <li>Конкретні кроки під твій салон</li>
+        <li>Рекомендації по команді та процесах</li>
+        <li>Можливість спецумов на Beauty CEO</li>
+      </ul>
+      <a href="https://anketapredzapusu.adsquiz.io/?utm_source=telegram&utm_medium=calculator&utm_campaign=zaklik1" target="_blank" class="cta-btn">ЗАПИСАТИСЬ НА АУДИТ →</a>
+      <p class="cta-note">⏰ Лише 20 місць на місяць</p>
+    </div>
+
+    <button class="btn-recalc" onclick="recalc()">↺ Змінити цифри та порахувати знову</button>
+
+  </div>
+
+</div>
+
+<script>
+const AUDIT_URL = "https://anketapredzapusu.adsquiz.io/?utm_source=telegram&utm_medium=calculator&utm_campaign=zaklik1";
+const MAX_HOURS = 12;
+
+function fmt(n) {
+  return Math.round(n).toLocaleString('uk-UA');
+}
+
+function animateNum(el, target, duration = 1200) {
+  const start = 0;
+  const startTime = performance.now();
+  function update(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    el.textContent = fmt(Math.round(start + (target - start) * ease));
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function getVal(id) {
+  return parseFloat(document.getElementById(id).value) || 0;
+}
+
+function calculate() {
+  // Зчитуємо всі значення
+  const mastersNow  = getVal('masters-now');
+  const mastersMax  = getVal('masters-max');
+  const hoursNow    = getVal('hours-now');
+  const workDays    = getVal('work-days');
+  const clientsReal = getVal('clients-real');
+  const clientsMax  = getVal('clients-max');
+  const avgCheck    = getVal('avg-check');
+  const newClients  = getVal('new-clients');
+  const returnClients = getVal('return-clients');
+
+  // Валідація
+  const errEl = document.getElementById('calc-error');
+  const fields = ['masters-now','masters-max','hours-now','work-days','clients-real','clients-max','avg-check','new-clients','return-clients'];
+  let hasError = false;
+
+  fields.forEach(id => {
+    const input = document.getElementById(id);
+    if (!getVal(id) || getVal(id) <= 0) {
+      input.classList.add('error');
+      hasError = true;
+    } else {
+      input.classList.remove('error');
+    }
+  });
+
+  if (mastersNow > mastersMax) {
+    document.getElementById('masters-now').classList.add('error');
+    errEl.textContent = '⚠ Майстрів зараз не може бути більше ніж максимум місць';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (clientsReal > clientsMax) {
+    document.getElementById('clients-real').classList.add('error');
+    errEl.textContent = '⚠ Реальна кількість клієнтів не може бути більше максимальної';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (returnClients > newClients) {
+    document.getElementById('return-clients').classList.add('error');
+    errEl.textContent = '⚠ Повторних клієнтів не може бути більше ніж нових';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (hasError) {
+    errEl.textContent = '⚠ Будь ласка, заповни всі поля коректно';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  errEl.style.display = 'none';
+
+  // ── РОЗРАХУНКИ ──
+
+  // Зона 1: Незайняті місця
+  const emptySeats = mastersMax - mastersNow;
+  const lossSeats = emptySeats > 0
+    ? emptySeats * clientsReal * avgCheck * workDays
+    : 0;
+
+  // Зона 2: Порожні вікна у майстрів
+  const clientsGap = clientsMax - clientsReal;
+  const lossLoad = clientsGap > 0
+    ? mastersNow * clientsGap * avgCheck * workDays
+    : 0;
+
+  // Зона 3: Невикористані години
+  const hoursGap = MAX_HOURS - hoursNow;
+  // Клієнтів за годину = clientsMax / hoursNow
+  const clientsPerHour = hoursNow > 0 ? clientsReal / hoursNow : 0;
+  const lossHours = hoursGap > 0
+    ? mastersNow * clientsPerHour * hoursGap * avgCheck * workDays
+    : 0;
+
+  // Зона 4: Відтік клієнтів
+  const churnClients = newClients - returnClients;
+  // Залучення нового клієнта коштує в 5х більше ніж утримання
+  // Тому щомісяця втрачаємо ці клієнти × чек
+  const lossChurn = churnClients > 0
+    ? churnClients * avgCheck * 2  // × 2 бо ці клієнти могли повернутись ще раз
+    : 0;
+
+  const totalLoss = lossSeats + lossLoad + lossHours + lossChurn;
+  const yearLoss  = totalLoss * 12;
+  const potential = totalLoss * 0.7; // реально можна повернути ~70%
+
+  // ── ВІДОБРАЖЕННЯ ──
+
+  // Зона 1
+  const zoneSeats = document.getElementById('zone-seats');
+  if (lossSeats > 0) {
+    zoneSeats.style.display = 'flex';
+    document.getElementById('zone-seats-desc').textContent =
+      `У тебе ${emptySeats} незайнятих ${emptySeats===1?'місце':'місця'} з ${mastersMax} можливих. Кожне порожнє місце = ${fmt(clientsReal * avgCheck * workDays)} грн/міс яких немає у твоїй касі.`;
+    animateNum(document.getElementById('zone-seats-num'), lossSeats);
+  } else {
+    zoneSeats.style.display = 'none';
+  }
+
+  // Зона 2
+  if (lossLoad > 0) {
+    document.getElementById('zone-load-desc').textContent =
+      `Кожен майстер приймає ${clientsReal} клієнтів замість ${clientsMax} можливих. ${clientsGap} порожніх вікна × ${mastersNow} майстрів × ${workDays} днів = ${fmt(mastersNow * clientsGap * workDays)} незаписаних візитів.`;
+  } else {
+    document.getElementById('zone-load-desc').textContent = 'Майстри завантажені на максимум — чудово!';
+  }
+  animateNum(document.getElementById('zone-load-num'), lossLoad);
+
+  // Зона 3
+  const zoneHours = document.getElementById('zone-hours');
+  if (lossHours > 0) {
+    zoneHours.style.display = 'flex';
+    document.getElementById('zone-hours-desc').textContent =
+      `Салон працює ${hoursNow} год замість максимальних ${MAX_HOURS} год. ${hoursGap} год × ${mastersNow} майстрів × ${workDays} днів = ${fmt(mastersNow * clientsPerHour.toFixed(1) * hoursGap * workDays)} потенційних візитів яких немає.`;
+    animateNum(document.getElementById('zone-hours-num'), lossHours);
+  } else {
+    zoneHours.style.display = 'none';
+  }
+
+  // Зона 4
+  const zoneChurn = document.getElementById('zone-churn');
+  if (lossChurn > 0) {
+    zoneChurn.style.display = 'flex';
+    document.getElementById('zone-churn-desc').textContent =
+      `${churnClients} нових клієнтів щомісяця не повертаються. Залучення нового клієнта коштує у 5 разів дорожче ніж утримання. Щомісяця ти "купуєш" цих людей знову замість того щоб їх утримати.`;
+    animateNum(document.getElementById('zone-churn-num'), lossChurn);
+  } else {
+    zoneChurn.style.display = 'none';
+  }
+
+  // Головні числа
+  animateNum(document.getElementById('res-month'), totalLoss, 1500);
+  animateNum(document.getElementById('res-year'),  yearLoss, 1800);
+  animateNum(document.getElementById('res-potential'), potential, 1400);
+
+  // Показуємо результати
+  const results = document.getElementById('results');
+  results.classList.add('show');
+  setTimeout(() => {
+    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+function recalc() {
+  const results = document.getElementById('results');
+  results.classList.remove('show');
+  results.style.display = 'none';
+  setTimeout(() => { results.style.display = ''; }, 50);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Скидаємо помилки
+  document.querySelectorAll('input').forEach(i => i.classList.remove('error'));
+}
+
+// Оновлення слайдера кольору
+document.querySelectorAll('input[type=range]').forEach(slider => {
+  slider.addEventListener('input', function() {
+    const pct = ((this.value - this.min) / (this.max - this.min)) * 100;
+    this.style.setProperty('--pct', pct + '%');
+  });
+});
+</script>
+</body>
+</html>
