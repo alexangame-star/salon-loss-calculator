@@ -137,25 +137,6 @@ input[type=number]:focus{
 }
 input[type=number].error{border-color:#e87a7a;box-shadow:0 0 0 3px rgba(232,122,122,.1);}
 
-/* ── СЛАЙДЕР ── */
-.slider-wrap{margin-top:4px;}
-input[type=range]{
-  width:100%;height:4px;
-  background:linear-gradient(90deg,var(--rose) var(--pct,50%),rgba(238,197,204,.5) var(--pct,50%));
-  border-radius:4px;outline:none;
-  -webkit-appearance:none;cursor:pointer;
-  margin-bottom:6px;
-}
-input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;
-  width:22px;height:22px;
-  background:linear-gradient(135deg,var(--deep),var(--rose));
-  border-radius:50%;border:3px solid var(--white);
-  box-shadow:0 2px 8px rgba(125,51,71,.3);
-  cursor:pointer;
-}
-.slider-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);}
-
 /* ── КНОПКА РАХУВАТИ ── */
 .btn-calc{
   width:100%;padding:18px;margin-top:12px;
@@ -408,7 +389,6 @@ input[type=range]::-webkit-slider-thumb{
   background:var(--petal);
   border-radius:10px;
 }
-.modal-consent a{color:var(--rose);text-decoration:none;}
 .modal-privacy{
   display:flex;align-items:flex-start;gap:8px;
   font-size:11px;color:var(--muted);
@@ -432,9 +412,6 @@ input[type=range]::-webkit-slider-thumb{
   color:var(--rose);font-style:italic;
   margin-bottom:10px;display:none;
 }
-
-/* Прихована форма для Sheets */
-#hidden-form-calc{display:none;}
 </style>
 </head>
 <body>
@@ -570,7 +547,7 @@ input[type=range]::-webkit-slider-thumb{
   <div class="calc-error" id="calc-error">⚠ Будь ласка, заповни всі поля коректно</div>
 
   <div style="margin-top:12px;">
-    <button class="btn-calc" onclick="openContactModal()">
+    <button class="btn-calc" type="button" onclick="openContactModal()">
       ✦ ПОРАХУВАТИ МОЇ ВТРАТИ
     </button>
     <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.55;">
@@ -652,7 +629,7 @@ input[type=range]::-webkit-slider-thumb{
       <p class="cta-note">⏰ Лише 20 місць на місяць</p>
     </div>
 
-    <button class="btn-recalc" onclick="recalc()">↺ Змінити цифри та порахувати знову</button>
+    <button class="btn-recalc" type="button" onclick="recalc()">↺ Змінити цифри та порахувати знову</button>
 
   </div>
 
@@ -660,7 +637,10 @@ input[type=range]::-webkit-slider-thumb{
 
 <script>
 const AUDIT_URL = "https://anketapredzapusu.adsquiz.io/?utm_source=telegram&utm_medium=calculator&utm_campaign=zaklik1";
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbxbhhELnHRibuZ4fwgHxxMD3l3WDhbVMYapQxE48XIhJs5FO6nYnZlYwhZRBfs8HcDWYw/exec";
+
+/* ✅ ТУТ ВЖЕ ВСТАВИВ ТВОЄ РОБОЧЕ ПОСИЛАННЯ НА APPS SCRIPT */
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbxIAcQRa_7AXJJPzzYP0ZAEXDeekYaXp4GAUPLQFnUZaxM6_BkMyLLyt37z7OgqBZZxvg/exec";
+
 const MAX_HOURS = 12;
 
 // Глобальне сховище результатів
@@ -706,7 +686,10 @@ function calculate() {
 
   fields.forEach(id => {
     const input = document.getElementById(id);
-    if (!getVal(id) || getVal(id) <= 0) {
+    // нових/повторних можна 0, але інші повинні бути > 0
+    const v = getVal(id);
+    const allowZero = (id === 'new-clients' || id === 'return-clients');
+    if ((!allowZero && (!v || v <= 0)) || (allowZero && v < 0)) {
       input.classList.add('error');
       hasError = true;
     } else {
@@ -756,7 +739,6 @@ function calculate() {
 
   // Зона 3: Невикористані години
   const hoursGap = MAX_HOURS - hoursNow;
-  // Клієнтів за годину = clientsMax / hoursNow
   const clientsPerHour = hoursNow > 0 ? clientsReal / hoursNow : 0;
   const lossHours = hoursGap > 0
     ? mastersNow * clientsPerHour * hoursGap * avgCheck * workDays
@@ -764,15 +746,13 @@ function calculate() {
 
   // Зона 4: Відтік клієнтів
   const churnClients = newClients - returnClients;
-  // Залучення нового клієнта коштує в 5х більше ніж утримання
-  // Тому щомісяця втрачаємо ці клієнти × чек
   const lossChurn = churnClients > 0
-    ? churnClients * avgCheck * 2  // × 2 бо ці клієнти могли повернутись ще раз
+    ? churnClients * avgCheck * 2
     : 0;
 
   const totalLoss = lossSeats + lossLoad + lossHours + lossChurn;
   const yearLoss  = totalLoss * 12;
-  const potential = totalLoss * 0.7; // реально можна повернути ~70%
+  const potential = totalLoss * 0.7;
 
   // ── ВІДОБРАЖЕННЯ ──
 
@@ -801,7 +781,7 @@ function calculate() {
   if (lossHours > 0) {
     zoneHours.style.display = 'flex';
     document.getElementById('zone-hours-desc').textContent =
-      `Салон працює ${hoursNow} год замість максимальних ${MAX_HOURS} год. ${hoursGap} год × ${mastersNow} майстрів × ${workDays} днів = ${fmt(mastersNow * clientsPerHour.toFixed(1) * hoursGap * workDays)} потенційних візитів яких немає.`;
+      `Салон працює ${hoursNow} год замість максимальних ${MAX_HOURS} год. ${hoursGap} год × ${mastersNow} майстрів × ${workDays} днів = ${fmt(mastersNow * clientsPerHour * hoursGap * workDays)} потенційних візитів яких немає.`;
     animateNum(document.getElementById('zone-hours-num'), lossHours);
   } else {
     zoneHours.style.display = 'none';
@@ -845,11 +825,11 @@ function recalc() {
 }
 
 function openContactModal() {
-  // Спочатку валідуємо форму
   calculate();
 }
 
-function submitModal() {
+/* ✅ ЗАМІНЕНО: тепер відправляємо в Google Sheets через fetch (без iframe/form) */
+async function submitModal() {
   const name     = document.getElementById('m-name').value.trim();
   const phone    = document.getElementById('m-phone').value.trim();
   const telegram = document.getElementById('m-telegram').value.trim();
@@ -857,98 +837,65 @@ function submitModal() {
   const sendEl   = document.getElementById('modal-sending');
   const btn      = document.getElementById('btn-modal-submit');
 
-  // Скидаємо помилки
   errEl.style.display = 'none';
-  ['m-name','m-phone','m-telegram'].forEach(id => {
-    document.getElementById(id).classList.remove('error');
-  });
+  ['m-name','m-phone','m-telegram'].forEach(id => document.getElementById(id).classList.remove('error'));
 
-  // Валідація
   let hasErr = false;
-  if (!name)     { document.getElementById('m-name').classList.add('error');     hasErr = true; }
-  if (!phone)    { document.getElementById('m-phone').classList.add('error');    hasErr = true; }
+  if (!name)     { document.getElementById('m-name').classList.add('error'); hasErr = true; }
+  if (!phone)    { document.getElementById('m-phone').classList.add('error'); hasErr = true; }
   if (!telegram) { document.getElementById('m-telegram').classList.add('error'); hasErr = true; }
   if (hasErr) { errEl.style.display = 'block'; return; }
+
+  const r = calcResults || {};
+  if (!r.mastersNow) {
+    errEl.textContent = 'Будь ласка, спочатку введи цифри і натисни “Порахувати”.';
+    errEl.style.display = 'block';
+    return;
+  }
 
   btn.disabled = true;
   sendEl.style.display = 'block';
 
   const now = new Date();
   const dateStr = now.toLocaleDateString('uk-UA') + ' ' + now.toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'});
-  const r = calcResults;
 
-  // Заповнюємо приховану форму
-  const form = document.getElementById('hidden-form-calc');
-  form.action = SHEET_URL;
-  document.getElementById('hfc-date').value          = dateStr;
-  document.getElementById('hfc-name').value          = name;
-  document.getElementById('hfc-phone').value         = phone;
-  document.getElementById('hfc-telegram').value      = telegram;
-  document.getElementById('hfc-masters-now').value   = r.mastersNow || '';
-  document.getElementById('hfc-masters-max').value   = r.mastersMax || '';
-  document.getElementById('hfc-hours-now').value     = r.hoursNow || '';
-  document.getElementById('hfc-work-days').value     = r.workDays || '';
-  document.getElementById('hfc-clients-real').value  = r.clientsReal || '';
-  document.getElementById('hfc-clients-max').value   = r.clientsMax || '';
-  document.getElementById('hfc-avg-check').value     = r.avgCheck || '';
-  document.getElementById('hfc-new-clients').value   = r.newClients || '';
-  document.getElementById('hfc-return-clients').value = r.returnClients || '';
-  document.getElementById('hfc-loss-month').value    = Math.round(r.totalLoss || 0);
-  document.getElementById('hfc-loss-year').value     = Math.round(r.yearLoss || 0);
-  document.getElementById('hfc-potential').value     = Math.round(r.potential || 0);
-
-  // Будуємо URL з усіма параметрами
   const params = new URLSearchParams({
     date:           dateStr,
     name:           name,
     phone:          phone,
     telegram:       telegram,
-    masters_now:    r.mastersNow     || '',
-    masters_max:    r.mastersMax     || '',
-    hours_now:      r.hoursNow       || '',
-    work_days:      r.workDays       || '',
-    clients_real:   r.clientsReal    || '',
-    clients_max:    r.clientsMax     || '',
-    avg_check:      r.avgCheck       || '',
-    new_clients:    r.newClients     || '',
-    return_clients: r.returnClients  || '',
+    masters_now:    r.mastersNow,
+    masters_max:    r.mastersMax,
+    hours_now:      r.hoursNow,
+    work_days:      r.workDays,
+    clients_real:   r.clientsReal,
+    clients_max:    r.clientsMax,
+    avg_check:      r.avgCheck,
+    new_clients:    r.newClients,
+    return_clients: r.returnClients,
     loss_month:     Math.round(r.totalLoss || 0),
     loss_year:      Math.round(r.yearLoss  || 0),
     potential:      Math.round(r.potential || 0)
   });
 
-  const fullUrl = SHEET_URL + '?' + params.toString();
-
-  // Створюємо новий iframe та форму динамічно — найнадійніший спосіб
-  const iframeName = 'gs_iframe_' + Date.now();
-  const iframe = document.createElement('iframe');
-  iframe.name = iframeName;
-  iframe.style.display = 'none';
-  document.body.appendChild(iframe);
-
-  const dynForm = document.createElement('form');
-  dynForm.method = 'GET';
-  dynForm.action = fullUrl;
-  dynForm.target = iframeName;
-  dynForm.style.display = 'none';
-  document.body.appendChild(dynForm);
-  dynForm.submit();
-
-  console.log('✅ Відправлено:', fullUrl);
-
-  // Прибираємо iframe через 5 сек
-  setTimeout(() => {
-    iframe.remove();
-    dynForm.remove();
-  }, 5000);
-
-  setTimeout(() => {
+  try {
+    // mode:no-cors — щоб браузер не блокував, GAS все одно прийме
+    await fetch(SHEET_URL + "?" + params.toString(), { method: "GET", mode: "no-cors" });
+    console.log("✅ Sent to sheet:", SHEET_URL, params.toString());
+  } catch (e) {
+    console.log("❌ Send error:", e);
+    errEl.textContent = 'Не вдалося відправити дані. Спробуй ще раз.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
     sendEl.style.display = 'none';
-    document.getElementById('modal-overlay').classList.remove('open');
-    const results = document.getElementById('results');
-    results.classList.add('show');
-    setTimeout(() => results.scrollIntoView({ behavior:'smooth', block:'start' }), 100);
-  }, 900);
+    return;
+  }
+
+  sendEl.style.display = 'none';
+  document.getElementById('modal-overlay').classList.remove('open');
+  const results = document.getElementById('results');
+  results.classList.add('show');
+  setTimeout(() => results.scrollIntoView({ behavior:'smooth', block:'start' }), 100);
 }
 
 // Ініціалізація після завантаження DOM
@@ -960,73 +907,47 @@ document.addEventListener('DOMContentLoaded', function() {
       if (e.target === this) this.classList.remove('open');
     });
   }
-  // Оновлення слайдера кольору
-  document.querySelectorAll('input[type=range]').forEach(slider => {
-    slider.addEventListener('input', function() {
-      const pct = ((this.value - this.min) / (this.max - this.min)) * 100;
-      this.style.setProperty('--pct', pct + '%');
-    });
-  });
 });
 </script>
-  <!-- МОДАЛКА КОНТАКТІВ -->
-  <div class="modal-overlay" id="modal-overlay">
-    <div class="modal">
-      <div class="modal-icon">🌸</div>
-      <div class="modal-title">Майже готово!</div>
-      <p class="modal-sub">Залиш контакти — і одразу побачиш<br>детальний розрахунок втрат свого салону</p>
 
-      <div class="modal-field">
-        <label class="modal-label">Твоє ім'я</label>
-        <input type="text" id="m-name" class="modal-input" placeholder="Наприклад: Марія">
-      </div>
-      <div class="modal-field">
-        <label class="modal-label">Номер телефону</label>
-        <input type="tel" id="m-phone" class="modal-input" placeholder="+380 ___ ___ ___">
-      </div>
-      <div class="modal-field">
-        <label class="modal-label">Нікнейм у Telegram</label>
-        <input type="text" id="m-telegram" class="modal-input" placeholder="@username">
-      </div>
+<!-- МОДАЛКА КОНТАКТІВ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-icon">🌸</div>
+    <div class="modal-title">Майже готово!</div>
+    <p class="modal-sub">Залиш контакти — і одразу побачиш<br>детальний розрахунок втрат свого салону</p>
 
-      <div class="modal-consent">
-        Натискаючи кнопку нижче, ви погоджуєтесь на обробку введених даних та можливість отримання додаткової корисної інформації від Вікторії Близнюк.
-      </div>
+    <div class="modal-field">
+      <label class="modal-label">Твоє ім'я</label>
+      <input type="text" id="m-name" class="modal-input" placeholder="Наприклад: Марія">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Номер телефону</label>
+      <input type="tel" id="m-phone" class="modal-input" placeholder="+380 ___ ___ ___">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Нікнейм у Telegram</label>
+      <input type="text" id="m-telegram" class="modal-input" placeholder="@username">
+    </div>
 
-      <div class="modal-error" id="modal-error">Будь ласка, заповни всі поля</div>
-      <div class="modal-sending" id="modal-sending">Зберігаємо дані... ✨</div>
+    <div class="modal-consent">
+      Натискаючи кнопку нижче, ви погоджуєтесь на обробку введених даних та можливість отримання додаткової корисної інформації від Вікторії Близнюк.
+    </div>
 
-      <button class="btn-modal-submit" id="btn-modal-submit" onclick="submitModal()">
-        ПОКАЗАТИ МІЙ РЕЗУЛЬТАТ →
-      </button>
+    <div class="modal-error" id="modal-error">Будь ласка, заповни всі поля</div>
+    <div class="modal-sending" id="modal-sending">Зберігаємо дані... ✨</div>
 
-      <div class="modal-privacy">
-        <span>🔒</span>
-        Твої дані в безпеці — не передаємо третім особам
-      </div>
+    <button type="button" class="btn-modal-submit" id="btn-modal-submit" onclick="submitModal()">
+      ПОКАЗАТИ МІЙ РЕЗУЛЬТАТ →
+    </button>
+
+    <div class="modal-privacy">
+      <span>🔒</span>
+      Твої дані в безпеці — не передаємо третім особам
     </div>
   </div>
-
-  <!-- Прихована форма Google Sheets -->
-  <form id="hidden-form-calc" method="GET" target="hidden-iframe-calc">
-    <input name="date"        id="hfc-date">
-    <input name="name"        id="hfc-name">
-    <input name="phone"       id="hfc-phone">
-    <input name="telegram"    id="hfc-telegram">
-    <input name="masters_now" id="hfc-masters-now">
-    <input name="masters_max" id="hfc-masters-max">
-    <input name="hours_now"   id="hfc-hours-now">
-    <input name="work_days"   id="hfc-work-days">
-    <input name="clients_real" id="hfc-clients-real">
-    <input name="clients_max" id="hfc-clients-max">
-    <input name="avg_check"   id="hfc-avg-check">
-    <input name="new_clients" id="hfc-new-clients">
-    <input name="return_clients" id="hfc-return-clients">
-    <input name="loss_month"  id="hfc-loss-month">
-    <input name="loss_year"   id="hfc-loss-year">
-    <input name="potential"   id="hfc-potential">
-  </form>
-  <iframe name="hidden-iframe-calc" style="display:none"></iframe>
+</div>
 
 </body>
 </html>
+
