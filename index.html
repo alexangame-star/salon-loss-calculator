@@ -335,6 +335,106 @@ input[type=range]::-webkit-slider-thumb{
   .cta{padding:28px 20px;}
   .fields{grid-template-columns:1fr;}
 }
+
+/* ── МОДАЛКА КОНТАКТІВ ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(30,18,24,.65);
+  backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+  opacity:0;pointer-events:none;
+  transition:opacity .3s ease;
+}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{
+  background:var(--white);
+  border-radius:28px;
+  padding:44px 40px 36px;
+  width:100%;max-width:480px;
+  position:relative;
+  transform:translateY(24px);
+  transition:transform .35s cubic-bezier(.2,.8,.3,1);
+  box-shadow:0 24px 80px rgba(30,18,24,.25);
+  overflow:hidden;
+}
+.modal::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,var(--blush),var(--gold),var(--rose));
+}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-icon{font-size:36px;text-align:center;margin-bottom:14px;}
+.modal-title{
+  font-family:'Playfair Display',serif;
+  font-size:26px;font-weight:700;
+  color:var(--dark);text-align:center;
+  line-height:1.25;margin-bottom:8px;
+}
+.modal-sub{
+  font-size:13.5px;color:var(--muted);
+  text-align:center;line-height:1.6;
+  margin-bottom:28px;
+}
+.modal-field{margin-bottom:16px;}
+.modal-label{
+  display:block;font-size:11px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--rose);margin-bottom:7px;
+}
+.modal-input{
+  width:100%;padding:13px 16px;
+  background:var(--cream);
+  border:1.5px solid rgba(238,197,204,.7);
+  border-radius:12px;
+  font-family:'Mulish',sans-serif;font-size:15px;
+  color:var(--dark);outline:none;
+  transition:all .2s;
+}
+.modal-input:focus{
+  border-color:var(--rose);
+  background:var(--white);
+  box-shadow:0 0 0 3px rgba(201,123,138,.12);
+}
+.modal-input::placeholder{color:#c0b0b5;}
+.modal-input.error{border-color:#e87a7a;}
+.modal-error{
+  font-size:12px;color:var(--deep);
+  margin-bottom:10px;display:none;
+}
+.modal-consent{
+  font-size:11.5px;color:var(--muted);
+  line-height:1.6;margin-bottom:20px;
+  padding:12px 14px;
+  background:var(--petal);
+  border-radius:10px;
+}
+.modal-consent a{color:var(--rose);text-decoration:none;}
+.modal-privacy{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:11px;color:var(--muted);
+  line-height:1.5;margin-top:14px;
+  text-align:center;justify-content:center;
+}
+.modal-privacy span{font-size:14px;}
+.btn-modal-submit{
+  width:100%;padding:16px;
+  background:linear-gradient(135deg,var(--deep),var(--rose));
+  color:var(--white);border:none;border-radius:14px;
+  font-family:'Mulish',sans-serif;font-size:14px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;
+  cursor:pointer;transition:all .25s;
+  box-shadow:0 6px 24px rgba(125,51,71,.3);
+}
+.btn-modal-submit:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(125,51,71,.4);}
+.btn-modal-submit:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+.modal-sending{
+  text-align:center;font-size:13px;
+  color:var(--rose);font-style:italic;
+  margin-bottom:10px;display:none;
+}
+
+/* Прихована форма для Sheets */
+#hidden-form-calc{display:none;}
 </style>
 </head>
 <body>
@@ -469,9 +569,14 @@ input[type=range]::-webkit-slider-thumb{
 
   <div class="calc-error" id="calc-error">⚠ Будь ласка, заповни всі поля коректно</div>
 
-  <button class="btn-calc" onclick="calculate()">
-    ✦ ПОРАХУВАТИ МОЇ ВТРАТИ
-  </button>
+  <div style="margin-top:12px;">
+    <button class="btn-calc" onclick="openContactModal()">
+      ✦ ПОРАХУВАТИ МОЇ ВТРАТИ
+    </button>
+    <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.55;">
+      Натискаючи кнопку, ви погоджуєтесь на обробку введених даних та можливість отримання додаткової інформації. 🔒 Дані не передаються третім особам.
+    </p>
+  </div>
 
   <!-- РЕЗУЛЬТАТИ -->
   <div id="results">
@@ -555,7 +660,11 @@ input[type=range]::-webkit-slider-thumb{
 
 <script>
 const AUDIT_URL = "https://anketapredzapusu.adsquiz.io/?utm_source=telegram&utm_medium=calculator&utm_campaign=zaklik1";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbxbhhELnHRibuZ4fwgHxxMD3l3WDhbVMYapQxE48XIhJs5FO6nYnZlYwhZRBfs8HcDWYw/exec";
 const MAX_HOURS = 12;
+
+// Глобальне сховище результатів
+let calcResults = {};
 
 function fmt(n) {
   return Math.round(n).toLocaleString('uk-UA');
@@ -714,12 +823,15 @@ function calculate() {
   animateNum(document.getElementById('res-year'),  yearLoss, 1800);
   animateNum(document.getElementById('res-potential'), potential, 1400);
 
-  // Показуємо результати
-  const results = document.getElementById('results');
-  results.classList.add('show');
-  setTimeout(() => {
-    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 100);
+  // Зберігаємо результати глобально
+  calcResults = {
+    mastersNow, mastersMax, hoursNow, workDays,
+    clientsReal, clientsMax, avgCheck, newClients, returnClients,
+    totalLoss, yearLoss, potential
+  };
+
+  // Відкриваємо модалку для збору контактів
+  document.getElementById('modal-overlay').classList.add('open');
 }
 
 function recalc() {
@@ -728,17 +840,193 @@ function recalc() {
   results.style.display = 'none';
   setTimeout(() => { results.style.display = ''; }, 50);
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  // Скидаємо помилки
   document.querySelectorAll('input').forEach(i => i.classList.remove('error'));
+  calcResults = {};
 }
 
-// Оновлення слайдера кольору
-document.querySelectorAll('input[type=range]').forEach(slider => {
-  slider.addEventListener('input', function() {
-    const pct = ((this.value - this.min) / (this.max - this.min)) * 100;
-    this.style.setProperty('--pct', pct + '%');
+function openContactModal() {
+  // Спочатку валідуємо форму
+  calculate();
+}
+
+function submitModal() {
+  const name     = document.getElementById('m-name').value.trim();
+  const phone    = document.getElementById('m-phone').value.trim();
+  const telegram = document.getElementById('m-telegram').value.trim();
+  const errEl    = document.getElementById('modal-error');
+  const sendEl   = document.getElementById('modal-sending');
+  const btn      = document.getElementById('btn-modal-submit');
+
+  // Скидаємо помилки
+  errEl.style.display = 'none';
+  ['m-name','m-phone','m-telegram'].forEach(id => {
+    document.getElementById(id).classList.remove('error');
+  });
+
+  // Валідація
+  let hasErr = false;
+  if (!name)     { document.getElementById('m-name').classList.add('error');     hasErr = true; }
+  if (!phone)    { document.getElementById('m-phone').classList.add('error');    hasErr = true; }
+  if (!telegram) { document.getElementById('m-telegram').classList.add('error'); hasErr = true; }
+  if (hasErr) { errEl.style.display = 'block'; return; }
+
+  btn.disabled = true;
+  sendEl.style.display = 'block';
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('uk-UA') + ' ' + now.toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'});
+  const r = calcResults;
+
+  // Заповнюємо приховану форму
+  const form = document.getElementById('hidden-form-calc');
+  form.action = SHEET_URL;
+  document.getElementById('hfc-date').value          = dateStr;
+  document.getElementById('hfc-name').value          = name;
+  document.getElementById('hfc-phone').value         = phone;
+  document.getElementById('hfc-telegram').value      = telegram;
+  document.getElementById('hfc-masters-now').value   = r.mastersNow || '';
+  document.getElementById('hfc-masters-max').value   = r.mastersMax || '';
+  document.getElementById('hfc-hours-now').value     = r.hoursNow || '';
+  document.getElementById('hfc-work-days').value     = r.workDays || '';
+  document.getElementById('hfc-clients-real').value  = r.clientsReal || '';
+  document.getElementById('hfc-clients-max').value   = r.clientsMax || '';
+  document.getElementById('hfc-avg-check').value     = r.avgCheck || '';
+  document.getElementById('hfc-new-clients').value   = r.newClients || '';
+  document.getElementById('hfc-return-clients').value = r.returnClients || '';
+  document.getElementById('hfc-loss-month').value    = Math.round(r.totalLoss || 0);
+  document.getElementById('hfc-loss-year').value     = Math.round(r.yearLoss || 0);
+  document.getElementById('hfc-potential').value     = Math.round(r.potential || 0);
+
+  // Будуємо URL з усіма параметрами
+  const params = new URLSearchParams({
+    date:           dateStr,
+    name:           name,
+    phone:          phone,
+    telegram:       telegram,
+    masters_now:    r.mastersNow     || '',
+    masters_max:    r.mastersMax     || '',
+    hours_now:      r.hoursNow       || '',
+    work_days:      r.workDays       || '',
+    clients_real:   r.clientsReal    || '',
+    clients_max:    r.clientsMax     || '',
+    avg_check:      r.avgCheck       || '',
+    new_clients:    r.newClients     || '',
+    return_clients: r.returnClients  || '',
+    loss_month:     Math.round(r.totalLoss || 0),
+    loss_year:      Math.round(r.yearLoss  || 0),
+    potential:      Math.round(r.potential || 0)
+  });
+
+  const fullUrl = SHEET_URL + '?' + params.toString();
+
+  // Створюємо новий iframe та форму динамічно — найнадійніший спосіб
+  const iframeName = 'gs_iframe_' + Date.now();
+  const iframe = document.createElement('iframe');
+  iframe.name = iframeName;
+  iframe.style.display = 'none';
+  document.body.appendChild(iframe);
+
+  const dynForm = document.createElement('form');
+  dynForm.method = 'GET';
+  dynForm.action = fullUrl;
+  dynForm.target = iframeName;
+  dynForm.style.display = 'none';
+  document.body.appendChild(dynForm);
+  dynForm.submit();
+
+  console.log('✅ Відправлено:', fullUrl);
+
+  // Прибираємо iframe через 5 сек
+  setTimeout(() => {
+    iframe.remove();
+    dynForm.remove();
+  }, 5000);
+
+  setTimeout(() => {
+    sendEl.style.display = 'none';
+    document.getElementById('modal-overlay').classList.remove('open');
+    const results = document.getElementById('results');
+    results.classList.add('show');
+    setTimeout(() => results.scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+  }, 900);
+}
+
+// Ініціалізація після завантаження DOM
+document.addEventListener('DOMContentLoaded', function() {
+  // Закрити модалку кліком на фон
+  const overlay = document.getElementById('modal-overlay');
+  if (overlay) {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+  }
+  // Оновлення слайдера кольору
+  document.querySelectorAll('input[type=range]').forEach(slider => {
+    slider.addEventListener('input', function() {
+      const pct = ((this.value - this.min) / (this.max - this.min)) * 100;
+      this.style.setProperty('--pct', pct + '%');
+    });
   });
 });
 </script>
+  <!-- МОДАЛКА КОНТАКТІВ -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-icon">🌸</div>
+      <div class="modal-title">Майже готово!</div>
+      <p class="modal-sub">Залиш контакти — і одразу побачиш<br>детальний розрахунок втрат свого салону</p>
+
+      <div class="modal-field">
+        <label class="modal-label">Твоє ім'я</label>
+        <input type="text" id="m-name" class="modal-input" placeholder="Наприклад: Марія">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Номер телефону</label>
+        <input type="tel" id="m-phone" class="modal-input" placeholder="+380 ___ ___ ___">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Нікнейм у Telegram</label>
+        <input type="text" id="m-telegram" class="modal-input" placeholder="@username">
+      </div>
+
+      <div class="modal-consent">
+        Натискаючи кнопку нижче, ви погоджуєтесь на обробку введених даних та можливість отримання додаткової корисної інформації від Вікторії Близнюк.
+      </div>
+
+      <div class="modal-error" id="modal-error">Будь ласка, заповни всі поля</div>
+      <div class="modal-sending" id="modal-sending">Зберігаємо дані... ✨</div>
+
+      <button class="btn-modal-submit" id="btn-modal-submit" onclick="submitModal()">
+        ПОКАЗАТИ МІЙ РЕЗУЛЬТАТ →
+      </button>
+
+      <div class="modal-privacy">
+        <span>🔒</span>
+        Твої дані в безпеці — не передаємо третім особам
+      </div>
+    </div>
+  </div>
+
+  <!-- Прихована форма Google Sheets -->
+  <form id="hidden-form-calc" method="GET" target="hidden-iframe-calc">
+    <input name="date"        id="hfc-date">
+    <input name="name"        id="hfc-name">
+    <input name="phone"       id="hfc-phone">
+    <input name="telegram"    id="hfc-telegram">
+    <input name="masters_now" id="hfc-masters-now">
+    <input name="masters_max" id="hfc-masters-max">
+    <input name="hours_now"   id="hfc-hours-now">
+    <input name="work_days"   id="hfc-work-days">
+    <input name="clients_real" id="hfc-clients-real">
+    <input name="clients_max" id="hfc-clients-max">
+    <input name="avg_check"   id="hfc-avg-check">
+    <input name="new_clients" id="hfc-new-clients">
+    <input name="return_clients" id="hfc-return-clients">
+    <input name="loss_month"  id="hfc-loss-month">
+    <input name="loss_year"   id="hfc-loss-year">
+    <input name="potential"   id="hfc-potential">
+  </form>
+  <iframe name="hidden-iframe-calc" style="display:none"></iframe>
+
 </body>
 </html>
